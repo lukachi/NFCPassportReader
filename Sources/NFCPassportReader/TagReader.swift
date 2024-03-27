@@ -178,7 +178,7 @@ public class TagReader {
         
         var data = [UInt8](resp.data[..<amountRead])
         
-        Logger.tagReader.debug( "TagReader - Number of data bytes to read - \(remaining)" )
+        Logger.tagReader.trace( "TagReader - Number of data bytes to read - \(remaining)" )
         
         var readAmount : Int = maxDataLengthToRead
         while remaining > 0 {
@@ -189,7 +189,7 @@ public class TagReader {
             self.progress?( Int(Float(amountRead) / Float(remaining+amountRead ) * 100))
             let offset = intToBin(amountRead, pad:4)
 
-            Logger.tagReader.debug( "TagReader - data bytes remaining: \(remaining), will read : \(readAmount)" )
+            Logger.tagReader.trace( "TagReader - data bytes remaining: \(remaining), will read : \(readAmount)" )
             let cmd = NFCISO7816APDU(
                 instructionClass: 00,
                 instructionCode: 0xB0,
@@ -200,12 +200,12 @@ public class TagReader {
             )
             resp = try await self.send( cmd: cmd )
 
-            Logger.tagReader.debug( "TagReader - got resp - \(binToHexRep(resp.data, asArray: true)), sw1 : \(resp.sw1), sw2 : \(resp.sw2)" )
+            Logger.tagReader.trace( "TagReader - got resp - \(binToHexRep(resp.data, asArray: true)), sw1 : \(resp.sw1), sw2 : \(resp.sw2)" )
             data += resp.data
             
             remaining -= resp.data.count
             amountRead += resp.data.count
-            Logger.tagReader.debug( "TagReader - Amount of data left to read - \(remaining)" )
+            Logger.tagReader.trace( "TagReader - Amount of data left to read - \(remaining)" )
         }
         
         return data
@@ -234,7 +234,7 @@ public class TagReader {
     
     func selectPassportApplication() async throws -> ResponseAPDU {
         // Finally reselect the eMRTD application so the rest of the reading works as normal
-        Logger.tagReader.debug( "Re-selecting eMRTD Application" )
+        Logger.tagReader.trace( "Re-selecting eMRTD Application" )
         let cmd : NFCISO7816APDU = NFCISO7816APDU(instructionClass: 0x00, instructionCode: 0xA4, p1Parameter: 0x04, p2Parameter: 0x0C, data: Data([0xA0, 0x00, 0x00, 0x02, 0x47, 0x10, 0x01]), expectedResponseLength: -1)
         
         let response = try await self.send( cmd: cmd)
@@ -250,22 +250,22 @@ public class TagReader {
     }
 
     func send( cmd: NFCISO7816APDU ) async throws -> ResponseAPDU {
-        Logger.tagReader.debug( "TagReader - sending \(cmd)" )
+        Logger.tagReader.trace( "TagReader - sending \(cmd)" )
         var toSend = cmd
         if let sm = secureMessaging {
             toSend = try sm.protect(apdu:cmd)
-            Logger.tagReader.debug("TagReader - [SM] \(toSend)" )
+            Logger.tagReader.trace("TagReader - [SM] \(toSend)" )
         }
         
         let (data, sw1, sw2) = try await tag.sendCommand(apdu: toSend)
-        Logger.tagReader.debug( "TagReader - Received response" )
+        Logger.tagReader.trace( "TagReader - Received response" )
         var rep = ResponseAPDU(data: [UInt8](data), sw1: sw1, sw2: sw2)
         
         if let sm = self.secureMessaging {
             rep = try sm.unprotect(rapdu:rep)
-            Logger.tagReader.debug("\(String(format:"TagReader [SM - unprotected] \(binToHexRep(rep.data, asArray:true)), sw1:0x%02x sw2:0x%02x", rep.sw1, rep.sw2))" )
+            Logger.tagReader.trace("\(String(format:"TagReader [SM - unprotected] \(binToHexRep(rep.data, asArray:true)), sw1:0x%02x sw2:0x%02x", rep.sw1, rep.sw2))" )
         } else {
-            Logger.tagReader.debug("\(String(format:"TagReader [unprotected] \(binToHexRep(rep.data, asArray:true)), sw1:0x%02x sw2:0x%02x", rep.sw1, rep.sw2))" )
+            Logger.tagReader.trace("\(String(format:"TagReader [unprotected] \(binToHexRep(rep.data, asArray:true)), sw1:0x%02x sw2:0x%02x", rep.sw1, rep.sw2))" )
             
         }
         

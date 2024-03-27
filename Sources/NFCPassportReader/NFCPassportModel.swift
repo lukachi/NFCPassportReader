@@ -302,9 +302,9 @@ public class NFCPassportModel {
         self.activeAuthenticationChallenge = challenge
         self.activeAuthenticationSignature = signature
         
-        Logger.passportReader.debug( "Active Authentication")
-        Logger.passportReader.debug( "   challange - \(binToHexRep(challenge))")
-        Logger.passportReader.debug( "   signature - \(binToHexRep(signature))")
+        Logger.passportReader.trace( "Active Authentication")
+        Logger.passportReader.trace( "   challange - \(binToHexRep(challenge))")
+        Logger.passportReader.trace( "   signature - \(binToHexRep(signature))")
 
         // Get AA Public key
         self.activeAuthenticationPassed = false
@@ -360,7 +360,7 @@ public class NFCPassportModel {
                 // Check hashes match
                 if msgHash == digest {
                     self.activeAuthenticationPassed = true
-                    Logger.passportReader.debug( "Active Authentication (RSA) successful" )
+                    Logger.passportReader.trace( "Active Authentication (RSA) successful" )
                 } else {
                     Logger.passportReader.error( "Error verifying Active Authentication RSA signature - Hash doesn't match" )
                 }
@@ -376,7 +376,7 @@ public class NFCPassportModel {
             
             if OpenSSLUtils.verifyECDSASignature( publicKey:ecdsaPublicKey, signature: signature, data: challenge, digestType: digestType ) {
                 self.activeAuthenticationPassed = true
-                Logger.passportReader.debug( "Active Authentication (ECDSA) successful" )
+                Logger.passportReader.trace( "Active Authentication (ECDSA) successful" )
             } else {
                 Logger.passportReader.error( "Error verifying Active Authentication ECDSA signature" )
             }
@@ -420,7 +420,7 @@ public class NFCPassportModel {
             throw error
         }
                 
-        Logger.passportReader.debug( "Passport passed SOD Verification" )
+        Logger.passportReader.trace( "Passport passed SOD Verification" )
         self.passportCorrectlySigned = true
 
     }
@@ -476,7 +476,7 @@ public class NFCPassportModel {
             throw PassiveAuthenticationError.InvalidDataGroupHash(errors)
         }
         
-        Logger.passportReader.debug( "Passport passed Datagroup Tampering check" )
+        Logger.passportReader.trace( "Passport passed Datagroup Tampering check" )
         passportDataNotTampered = true
     }
     
@@ -532,8 +532,8 @@ public class NFCPassportModel {
             throw PassiveAuthenticationError.UnableToParseSODHashes("Unable to extract hashes" )
         }
 
-        Logger.passportReader.debug( "Parse SOD - Using Algo - \(sodHashAlgo)" )
-        Logger.passportReader.debug( "      - Hashes     - \(sodHashes)" )
+        Logger.passportReader.trace( "Parse SOD - Using Algo - \(sodHashAlgo)" )
+        Logger.passportReader.trace( "      - Hashes     - \(sodHashes)" )
         
         return (sodHashAlgo, sodHashes)
     }

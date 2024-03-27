@@ -50,7 +50,7 @@ public class ChipAuthenticationHandler {
 
     public func doChipAuthentication() async throws  {
                 
-        Logger.chipAuth.info( "Performing Chip Authentication - number of public keys found - \(self.chipAuthPublicKeyInfos.count)" )
+        Logger.chipAuth.trace( "Performing Chip Authentication - number of public keys found - \(self.chipAuthPublicKeyInfos.count)" )
         guard isChipAuthenticationSupported else {
             throw NFCPassportReaderError.NotYetSupported( "ChipAuthentication not supported" )
         }
@@ -121,7 +121,7 @@ public class ChipAuthenticationHandler {
         // Send the public key to the passport
         try await sendPublicKey(oid: oid, keyId: keyId, pcdPublicKey: ephemeralKeyPair!)
             
-        Logger.chipAuth.debug( "Public Key successfully sent to passport!" )
+        Logger.chipAuth.trace( "Public Key successfully sent to passport!" )
         
         // Use our ephemeral public key and the passports public key to generate a shared secret
         // (the passport with do the same thing with their public key and our public key)
@@ -178,11 +178,11 @@ public class ChipAuthenticationHandler {
         
         let ssc = withUnsafeBytes(of: 0.bigEndian, Array.init)
         if (cipherAlg.hasPrefix("DESede")) {
-            Logger.chipAuth.info( "Restarting secure messaging using DESede encryption")
+            Logger.chipAuth.trace( "Restarting secure messaging using DESede encryption")
             let sm = SecureMessaging(encryptionAlgorithm: .DES, ksenc: ksEnc, ksmac: ksMac, ssc: ssc)
             tagReader?.secureMessaging = sm
         } else if (cipherAlg.hasPrefix("AES")) {
-            Logger.chipAuth.info( "Restarting secure messaging using AES encryption")
+            Logger.chipAuth.trace( "Restarting secure messaging using AES encryption")
             let sm = SecureMessaging(encryptionAlgorithm: .AES, ksenc: ksEnc, ksmac: ksMac, ssc: ssc)
             tagReader?.secureMessaging = sm
         } else {
