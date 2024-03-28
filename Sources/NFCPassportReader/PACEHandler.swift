@@ -77,7 +77,7 @@ public class PACEHandler {
             throw NFCPassportReaderError.NotYetSupported( "PACE not supported" )
         }
         
-        Logger.pace.trace( "Performing PACE with \(self.paceInfo.getProtocolOIDString())" )
+        
         
         paceOID = paceInfo.getObjectIdentifier()
         parameterSpec = try paceInfo.getParameterSpec()
@@ -92,16 +92,16 @@ public class PACEHandler {
         paceKey = try createPaceKey( from: mrzKey )
         
         // Temporary logging
-        Logger.pace.trace("doPace - inpit parameters" )
-        Logger.pace.trace("paceOID - \(self.paceOID)" )
-        Logger.pace.trace("parameterSpec - \(self.parameterSpec)" )
-        Logger.pace.trace("mappingType - \(self.mappingType!.description())" )
-        Logger.pace.trace("agreementAlg - \(self.agreementAlg)" )
-        Logger.pace.trace("cipherAlg - \(self.cipherAlg)" )
-        Logger.pace.trace("digestAlg - \(self.digestAlg)" )
-        Logger.pace.trace("keyLength - \(self.keyLength)" )
-        Logger.pace.trace("keyLength - \(mrzKey)" )
-        Logger.pace.trace("paceKey - \(binToHexRep(self.paceKey, asArray:true))" )
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
 
         // First start the initial auth call
         _ = try await tagReader.sendMSESetATMutualAuth(oid: paceOID, keyType: paceKeyType)
@@ -111,7 +111,7 @@ public class PACEHandler {
         let (ephemeralKeyPair, passportPublicKey) = try await self.doStep3KeyExchange(ephemeralParams: ephemeralParams)
         let (encKey, macKey) = try await self.doStep4KeyAgreement( pcdKeyPair: ephemeralKeyPair, passportPublicKey: passportPublicKey)
         try self.paceCompleted( ksEnc: encKey, ksMac: macKey )
-        Logger.pace.trace("PACE SUCCESSFUL" )
+        
     }
     
     /// Handles an error during the PACE process
@@ -120,8 +120,8 @@ public class PACEHandler {
     ///   - stage: Where in the PACE process the error occurred
     ///   - error: The error message
     func handleError( _ stage: String, _ error: String, needToTerminateGA: Bool = false ) {
-        Logger.pace.error( "PACEHandler: \(stage) - \(error)" )
-        Logger.pace.error( "   OpenSSLError: \(OpenSSLUtils.getOpenSSLError())" )
+        
+        
         self.paceError = "\(stage) - \(error)"
         //self.completedHandler?( false )
 
@@ -141,12 +141,12 @@ public class PACEHandler {
     
     /// Performs PACE Step 1- receives an encrypted nonce from the passport and decypts it with the  PACE key - derived from MRZ, CAN (not yet supported)
     func doStep1() async throws -> [UInt8] {
-        Logger.pace.trace("Doing PACE Step1...")
+        
         let response = try await tagReader.sendGeneralAuthenticate(data: [], isLast: false)
             
         let data = response.data
         let encryptedNonce = try unwrapDO(tag: 0x80, wrappedData: data)
-        Logger.pace.trace( "Encrypted nonce - \(binToHexRep(encryptedNonce, asArray:true))" )
+        
 
         let decryptedNonce: [UInt8]
         if self.cipherAlg == "DESede" {
@@ -159,7 +159,7 @@ public class PACEHandler {
             throw NFCPassportReaderError.UnsupportedCipherAlgorithm
         }
 
-        Logger.pace.trace( "Decrypted nonce - \(binToHexRep(decryptedNonce, asArray:true) )" )
+        
         return decryptedNonce
     }
     
@@ -171,13 +171,13 @@ public class PACEHandler {
     /// - Parameters:
     ///   - passportNonce: The decrypted nonce received from the passport
     func doStep2( passportNonce: [UInt8]) async throws -> OpaquePointer {
-        Logger.pace.trace( "Doing PACE Step2...")
+        
         switch(mappingType) {
             case .CAM, .GM:
-                Logger.pace.trace( "   Using General Mapping (GM)...")
+                
                 return try await doPACEStep2GM(passportNonce: passportNonce)
             case .IM:
-                Logger.pace.trace( "   Using Integrated Mapping (IM)...")
+                
                 return try await doPACEStep2IM(passportNonce: passportNonce)
             default:
                 throw NFCPassportReaderError.PACEError( "Step2GM", "Unsupported Mapping Type" )
@@ -198,16 +198,16 @@ public class PACEHandler {
         guard let pcdMappingEncodedPublicKey = OpenSSLUtils.getPublicKeyData(from: mappingKey) else {
             throw NFCPassportReaderError.PACEError( "Step2GM", "Unable to get public key from mapping key")
         }
-        Logger.pace.trace( "public mapping key - \(binToHexRep(pcdMappingEncodedPublicKey, asArray:true))")
+        
 
-        Logger.pace.trace( "Sending public mapping key to passport..")
+        
         let step2Data = wrapDO(b:0x81, arr:pcdMappingEncodedPublicKey)
         let response = try await tagReader.sendGeneralAuthenticate(data:step2Data, isLast:false)
 
         let piccMappingEncodedPublicKey = try unwrapDO(tag: 0x82, wrappedData: response.data)
             
-        Logger.pace.trace( "Received passports public mapping key")
-        Logger.pace.trace( "   public mapping key - \(binToHexRep(piccMappingEncodedPublicKey, asArray: true))")
+        
+        
 
         // Do mapping agreement
 
@@ -220,10 +220,10 @@ public class PACEHandler {
         // ephmeralParams are free'd in stage 3
         let ephemeralParams : OpaquePointer
         if self.agreementAlg == "DH" {
-            Logger.pace.trace( "Doing DH Mapping agreement")
+            
             ephemeralParams = try self.doDHMappingAgreement(mappingKey: mappingKey, passportPublicKeyData: piccMappingEncodedPublicKey, nonce: bn_nonce )
         } else if self.agreementAlg == "ECDH" {
-            Logger.pace.trace( "Doing ECDH Mapping agreement")
+            
             ephemeralParams = try self.doECDHMappingAgreement(mappingKey: mappingKey, passportPublicKeyData: piccMappingEncodedPublicKey, nonce: bn_nonce )
         } else {
             throw NFCPassportReaderError.PACEError( "Step2GM", "Unsupported agreement algorithm" )
@@ -246,7 +246,7 @@ public class PACEHandler {
     /// - Returns:
 ///         - Tuple of Generated Ephemeral KeyPair and the Passport's public key
     func doStep3KeyExchange(ephemeralParams: OpaquePointer) async throws -> (OpaquePointer, OpaquePointer) {
-        Logger.pace.trace( "Doing PACE Step3 - Key Exchange")
+        
 
         // Generate ephemeral keypair from ephemeralParams
         var ephKeyPair : OpaquePointer? = nil
@@ -259,7 +259,7 @@ public class PACEHandler {
             throw NFCPassportReaderError.PACEError( "Step3 KeyEx", "Unable to get create ephermeral key pair" )
         }
         
-        Logger.pace.trace( "Generated Ephemeral key pair")
+        
 
         // We've finished with the ephemeralParams now - we can now free it
         EVP_PKEY_free( ephemeralParams )
@@ -267,10 +267,10 @@ public class PACEHandler {
         guard let publicKey = OpenSSLUtils.getPublicKeyData( from: ephemeralKeyPair ) else {
             throw NFCPassportReaderError.PACEError( "Step3 KeyEx", "Unable to get public key from ephermeral key pair" )
         }
-        Logger.pace.trace( "Ephemeral public key - \(binToHexRep(publicKey, asArray: true))")
+        
 
         // exchange public keys
-        Logger.pace.trace( "Sending ephemeral public key to passport")
+        
         let step3Data = wrapDO(b:0x83, arr:publicKey)
         let response = try await tagReader.sendGeneralAuthenticate(data:step3Data, isLast:false)
         let passportEncodedPublicKey = try? unwrapDO(tag: 0x84, wrappedData: response.data)
@@ -278,7 +278,7 @@ public class PACEHandler {
             throw NFCPassportReaderError.PACEError( "Step3 KeyEx", "Unable to decode passports ephemeral key" )
         }
 
-        Logger.pace.trace( "Received passports ephemeral public key - \(binToHexRep(passportEncodedPublicKey!, asArray: true))" )
+        
         return (ephemeralKeyPair, passportPublicKey)
     }
     
@@ -295,54 +295,54 @@ public class PACEHandler {
     /// - Returns:
     ///         - Tuple of KSEnc KSMac
     func doStep4KeyAgreement( pcdKeyPair: OpaquePointer, passportPublicKey: OpaquePointer) async throws -> ([UInt8], [UInt8]) {
-        Logger.pace.trace( "Doing PACE Step4 Key Agreement...")
+        
 
-        Logger.pace.trace( "Computing shared secret...")
+        
         let sharedSecret = OpenSSLUtils.computeSharedSecret(publicKeyPair: pcdKeyPair, publicKey: passportPublicKey)
-        Logger.pace.trace( "Shared secret - \(binToHexRep(sharedSecret, asArray:true))")
+        
 
-        Logger.pace.trace( "Deriving ksEnc and ksMac keys from shared secret")
+        
         let gen = SecureMessagingSessionKeyGenerator()
         let encKey = try! gen.deriveKey(keySeed: sharedSecret, cipherAlgName: cipherAlg, keyLength: keyLength, mode: .ENC_MODE)
         let macKey = try! gen.deriveKey(keySeed: sharedSecret, cipherAlgName: cipherAlg, keyLength: keyLength, mode: .MAC_MODE)
-        Logger.pace.trace( "encKey - \(binToHexRep(encKey, asArray:true))")
-        Logger.pace.trace( "macKey - \(binToHexRep(macKey, asArray:true))")
+        
+        
 
         // Step 4 - generate authentication token
-        Logger.pace.trace( "Generating authentication token")
+        
         guard let pcdAuthToken = try? generateAuthenticationToken( publicKey: passportPublicKey, macKey: macKey) else {
             throw NFCPassportReaderError.PACEError( "Step3 KeyAgreement", "Unable to generate authentication token using passports public key" )
         }
-        Logger.pace.trace( "authentication token - \(pcdAuthToken)")
+        
 
-        Logger.pace.trace( "Sending auth token to passport")
+        
         let step4Data = wrapDO(b:0x85, arr:pcdAuthToken)
         let response = try await tagReader.sendGeneralAuthenticate(data:step4Data, isLast:true)
             
         let tvlResp = TKBERTLVRecord.sequenceOfRecords(from: Data(response.data))!
         if tvlResp[0].tag != 0x86 {
-            Logger.pace.warning("Was expecting tag 0x86, found: \(binToHex(UInt8(tvlResp[0].tag)))")
+            
         }
         // Calculate expected authentication token
         let expectedPICCToken = try self.generateAuthenticationToken( publicKey: pcdKeyPair, macKey: macKey)
         
-        Logger.pace.trace( "Expecting authentication token from passport - \(expectedPICCToken)")
+        
 
         let piccToken = [UInt8](tvlResp[0].value)
-        Logger.pace.trace( "Received authentication token from passport - \(piccToken)")
+        
 
         guard piccToken == expectedPICCToken else {
-            Logger.pace.error( "Error PICC Token mismatch!\npicToken - \(piccToken)\nexpectedPICCToken - \(expectedPICCToken)" )
+            
             throw NFCPassportReaderError.PACEError( "Step3 KeyAgreement", "Error PICC Token mismatch!\npicToken - \(piccToken)\nexpectedPICCToken - \(expectedPICCToken)" )
         }
         
-        Logger.pace.trace( "Auth token from passport matches expected token!" )
+        
         
         // This will be added for CAM when supported
         // var encryptedChipAuthenticationData : [UInt8]? = nil
         // if (sself.mappingType == PACEMappingType.CAM) {
         //    if tvlResp[1].tag != 0x8A {
-        //        Logger.pace.warning("CAM: Was expecting tag 0x86, found: \(binToHex(UInt8(tvlResp[1].tag)))")
+        //        
         //    }
         //    encryptedChipAuthenticationData = [UInt8](tvlResp[1].value)
         // }
@@ -359,11 +359,11 @@ public class PACEHandler {
         // Restart secure messaging
         let ssc = withUnsafeBytes(of: 0.bigEndian, Array.init)
         if (cipherAlg.hasPrefix("DESede")) {
-            Logger.pace.trace( "Restarting secure messaging using DESede encryption")
+            
             let sm = SecureMessaging(encryptionAlgorithm: .DES, ksenc: ksEnc, ksmac: ksMac, ssc: ssc)
             tagReader.secureMessaging = sm
         } else if (cipherAlg.hasPrefix("AES")) {
-            Logger.pace.trace( "Restarting secure messaging using AES encryption")
+            
             let sm = SecureMessaging(encryptionAlgorithm: .AES, ksenc: ksEnc, ksmac: ksMac, ssc: ssc)
             tagReader.secureMessaging = sm
         } else {
@@ -536,15 +536,15 @@ extension PACEHandler {
             encodedPublicKeyData = pad(encodedPublicKeyData, blockSize: 8)
         }
         
-        Logger.pace.trace( "Generating Authentication Token" )
-        Logger.pace.trace( "EncodedPubKey = \(binToHexRep(encodedPublicKeyData, asArray: true))" )
-        Logger.pace.trace( "macKey = \(binToHexRep(macKey, asArray: true))" )
+        
+        
+        
 
         let maccedPublicKeyDataObject = mac(algoName: cipherAlg == "DESede" ? .DES : .AES, key: macKey, msg: encodedPublicKeyData)
 
         // Take 8 bytes for auth token
         let authToken = [UInt8](maccedPublicKeyDataObject[0..<8])
-        Logger.pace.trace( "Generated authToken = \(binToHexRep(authToken, asArray: true))" )
+        
         return authToken
     }
     
@@ -557,7 +557,7 @@ extension PACEHandler {
     func encodePublicKey( oid : String, key : OpaquePointer ) throws -> [UInt8] {
         let encodedOid = oidToBytes(oid:oid, replaceTag: false)
         guard let pubKeyData = OpenSSLUtils.getPublicKeyData(from: key) else {
-            Logger.pace.error( "PACEHandler: encodePublicKey() - Unable to get public key data" )
+            
             throw NFCPassportReaderError.InvalidDataPassed("Unable to get public key data")
         }
 

@@ -50,7 +50,7 @@ public class ChipAuthenticationHandler {
 
     public func doChipAuthentication() async throws  {
                 
-        Logger.chipAuth.trace( "Performing Chip Authentication - number of public keys found - \(self.chipAuthPublicKeyInfos.count)" )
+        
         guard isChipAuthenticationSupported else {
             throw NFCPassportReaderError.NotYetSupported( "ChipAuthentication not supported" )
         }
@@ -97,14 +97,14 @@ public class ChipAuthenticationHandler {
     /// Apparently works for French passports
     public func inferOID(fromPublicKeyOID: String ) -> String? {
         if fromPublicKeyOID == SecurityInfo.ID_PK_ECDH_OID {
-            Logger.chipAuth.warning("No ChipAuthenticationInfo - guessing its id-CA-ECDH-3DES-CBC-CBC");
+            
             return SecurityInfo.ID_CA_ECDH_3DES_CBC_CBC_OID
         } else if fromPublicKeyOID == SecurityInfo.ID_PK_DH_OID {
-            Logger.chipAuth.warning("No ChipAuthenticationInfo - guessing its id-CA-DH-3DES-CBC-CBC");
+            
             return SecurityInfo.ID_CA_DH_3DES_CBC_CBC_OID
         }
         
-        Logger.chipAuth.warning("No ChipAuthenticationInfo and unsupported ChipAuthenticationPublicKeyInfo public key OID \(fromPublicKeyOID)")
+        
         return nil;
     }
     
@@ -121,7 +121,7 @@ public class ChipAuthenticationHandler {
         // Send the public key to the passport
         try await sendPublicKey(oid: oid, keyId: keyId, pcdPublicKey: ephemeralKeyPair!)
             
-        Logger.chipAuth.trace( "Public Key successfully sent to passport!" )
+        
         
         // Use our ephemeral public key and the passports public key to generate a shared secret
         // (the passport with do the same thing with their public key and our public key)
@@ -178,15 +178,15 @@ public class ChipAuthenticationHandler {
         
         let ssc = withUnsafeBytes(of: 0.bigEndian, Array.init)
         if (cipherAlg.hasPrefix("DESede")) {
-            Logger.chipAuth.trace( "Restarting secure messaging using DESede encryption")
+            
             let sm = SecureMessaging(encryptionAlgorithm: .DES, ksenc: ksEnc, ksmac: ksMac, ssc: ssc)
             tagReader?.secureMessaging = sm
         } else if (cipherAlg.hasPrefix("AES")) {
-            Logger.chipAuth.trace( "Restarting secure messaging using AES encryption")
+            
             let sm = SecureMessaging(encryptionAlgorithm: .AES, ksenc: ksEnc, ksmac: ksMac, ssc: ssc)
             tagReader?.secureMessaging = sm
         } else {
-            Logger.chipAuth.error( "Not restarting secure messaging as unsupported cipher algorithm requested - \(cipherAlg)")
+            
             throw NFCPassportReaderError.InvalidDataPassed("Unsupported cipher algorithm \(cipherAlg)" )
         }
     }

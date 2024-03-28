@@ -186,22 +186,22 @@ public func desMAC(key : [UInt8], msg : [UInt8]) -> [UInt8]{
     let size = msg.count / 8
     var y : [UInt8] = [0,0,0,0,0,0,0,0]
     
-    Logger.passportReader.trace("Calc mac" )
+    
     for i in 0 ..< size {
         let tmp = [UInt8](msg[i*8 ..< i*8+8])
-        Logger.passportReader.trace("x\(i): \(binToHexRep(tmp))" )
+        
         y = DESEncrypt(key: [UInt8](key[0..<8]), message: tmp, iv: y)
-        Logger.passportReader.trace("y\(i): \(binToHexRep(y))" )
+        
     }
     
-    Logger.passportReader.trace("y: \(binToHexRep(y))" )
-    Logger.passportReader.trace("bkey: \(binToHexRep([UInt8](key[8..<16])))" )
-    Logger.passportReader.trace("akey: \(binToHexRep([UInt8](key[0..<8])))" )
+    
+    
+    
     let iv : [UInt8] = [0,0,0,0,0,0,0,0]
     let b = DESDecrypt(key: [UInt8](key[8..<16]), message: y, iv: iv, options:UInt32(kCCOptionECBMode))
-    Logger.passportReader.trace( "b: \(binToHexRep(b))" )
+    
     let a = DESEncrypt(key: [UInt8](key[0..<8]), message: b, iv: iv, options:UInt32(kCCOptionECBMode))
-    Logger.passportReader.trace( "a: \(binToHexRep(a))" )
+    
     
     return a
 }
