@@ -313,7 +313,7 @@ public class NFCPassportModel {
             do {
                 var decryptedSig = try OpenSSLUtils.decryptRSASignature(signature: Data(signature), pubKey: rsaKey)
                 
-                print("decryptedSig: \(decryptedSig)")
+                print("decryptedSig: \(Data(decryptedSig).base64EncodedString())")
                 
                 // Decrypted signature compromises of header (6A), Message, Digest hash, Trailer
                 // Trailer can be 1 byte (BC - SHA-1 hash) or 2 bytes (xxCC) - where xx identifies the hash algorithm used
