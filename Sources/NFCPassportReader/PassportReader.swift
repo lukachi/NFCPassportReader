@@ -265,7 +265,7 @@ extension PassportReader {
 
         
 
-        let challenge = [UInt8](Data(base64Encoded: "3F7FY/qudR8=")!)
+        let challenge = [UInt8](Data(base64Encoded: "EBUU10gBxD8=")!)
         
         let response = try await tagReader.doInternalAuthentication(challenge: challenge)
         
