@@ -265,10 +265,13 @@ extension PassportReader {
 
         
 
-        let challenge = generateRandomUInt8Array(8)
+        let challenge = [UInt8](Data(base64Encoded: "3F7FY/qudR8=")!)
         
         let response = try await tagReader.doInternalAuthentication(challenge: challenge)
-        self.passport.verifyActiveAuthentication( challenge:challenge, signature:response.data )
+        
+        print("signature: \(Data(response.data).base64EncodedString())")
+        
+        self.passport.verifyActiveAuthentication(challenge: challenge, signature: response.data )
     }
     
 
