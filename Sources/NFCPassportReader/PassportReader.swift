@@ -265,7 +265,7 @@ extension PassportReader {
 
         
 
-        let challenge = [UInt8](Data(base64Encoded: "aciXWvtHF+U=")!)
+        let challenge = generateRandomUInt8Array(8)
         
         let response = try await tagReader.doInternalAuthentication(challenge: challenge)
         
