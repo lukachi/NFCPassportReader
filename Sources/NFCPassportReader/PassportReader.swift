@@ -34,6 +34,7 @@ public class PassportReader : NSObject {
     public var paceHandler : PACEHandler?
     public var mrzKey : String = ""
     public var dataAmountToReadOverride : Int? = nil
+    public var activeAuthenticationChallenge: [UInt8]? = nil
     
     public var scanCompletedHandler: ((NFCPassportModel?, NFCPassportReaderError?)->())!
     public var nfcViewDisplayMessageHandler: ((NFCViewDisplayMessage) -> String?)?
@@ -62,8 +63,15 @@ public class PassportReader : NSObject {
         dataAmountToReadOverride = amount
     }
     
-    public func readPassport( mrzKey : String, tags : [DataGroupId] = [], skipSecureElements : Bool = true, skipCA : Bool = false, skipPACE : Bool = false, customDisplayMessage : ((NFCViewDisplayMessage) -> String?)? = nil) async throws -> NFCPassportModel {
-        
+    public func readPassport(
+        mrzKey: String,
+        tags: [DataGroupId] = [],
+        skipSecureElements: Bool = true,
+        skipCA: Bool = false,
+        skipPACE: Bool = false,
+        customDisplayMessage: ((NFCViewDisplayMessage) -> String?)? = nil,
+        activeAuthenticationChallenge: [UInt8]? = nil
+    ) async throws -> NFCPassportModel {
         self.passport = NFCPassportModel()
         self.mrzKey = mrzKey
         self.skipCA = skipCA
@@ -77,6 +85,7 @@ public class PassportReader : NSObject {
         self.bacHandler = nil
         self.caHandler = nil
         self.paceHandler = nil
+        self.activeAuthenticationChallenge = activeAuthenticationChallenge
         
         // If no tags specified, read all
         if self.dataGroupsToRead.count == 0 {
@@ -262,14 +271,10 @@ extension PassportReader {
             return
         }
         self.updateReaderSessionMessage(alertMessage: NFCViewDisplayMessage.activeAuthentication)
-
         
-
-        let challenge = generateRandomUInt8Array(8)
+        let challenge = self.activeAuthenticationChallenge ?? generateRandomUInt8Array(8)
         
         let response = try await tagReader.doInternalAuthentication(challenge: challenge)
-        
-        print("signature: \(Data(response.data).base64EncodedString())")
         
         self.passport.verifyActiveAuthentication(challenge: challenge, signature: response.data )
     }

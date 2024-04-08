@@ -22,21 +22,20 @@ public enum PassportAuthenticationStatus {
 
 @available(iOS 13, macOS 10.15, *)
 public class NFCPassportModel {
+    lazy var documentType : String = { return String( passportDataElements?["5F03"]?.first ?? "?" ) }()
+    public lazy var documentSubType : String = { return String( passportDataElements?["5F03"]?.last ?? "?" ) }()
+    public lazy var documentNumber : String = { return (passportDataElements?["5A"] ?? "?").replacingOccurrences(of: "<", with: "" ) }()
+    public lazy var issuingAuthority : String = { return passportDataElements?["5F28"] ?? "?" }()
+    public lazy var documentExpiryDate : String = { return passportDataElements?["59"] ?? "?" }()
+    public lazy var dateOfBirth : String = { return passportDataElements?["5F57"] ?? "?" }()
+    public lazy var gender : String = { return passportDataElements?["5F35"] ?? "?" }()
+    public lazy var nationality : String = { return passportDataElements?["5F2C"] ?? "?" }()
     
-    public public(set) lazy var documentType : String = { return String( passportDataElements?["5F03"]?.first ?? "?" ) }()
-    public public(set) lazy var documentSubType : String = { return String( passportDataElements?["5F03"]?.last ?? "?" ) }()
-    public public(set) lazy var documentNumber : String = { return (passportDataElements?["5A"] ?? "?").replacingOccurrences(of: "<", with: "" ) }()
-    public public(set) lazy var issuingAuthority : String = { return passportDataElements?["5F28"] ?? "?" }()
-    public public(set) lazy var documentExpiryDate : String = { return passportDataElements?["59"] ?? "?" }()
-    public public(set) lazy var dateOfBirth : String = { return passportDataElements?["5F57"] ?? "?" }()
-    public public(set) lazy var gender : String = { return passportDataElements?["5F35"] ?? "?" }()
-    public public(set) lazy var nationality : String = { return passportDataElements?["5F2C"] ?? "?" }()
-    
-    public public(set) lazy var lastName : String = {
+    public lazy var lastName : String = {
         return names[0].replacingOccurrences(of: "<", with: " " )
     }()
     
-    public public(set) lazy var firstName : String = {
+    public lazy var firstName : String = {
         var name = ""
         for i in 1 ..< names.count {
             let fn = names[i].replacingOccurrences(of: "<", with: " " ).trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
@@ -45,7 +44,7 @@ public class NFCPassportModel {
         return name.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
     }()
     
-    public public(set) lazy var passportMRZ : String = { return passportDataElements?["5F1F"] ?? "NOT FOUND" }()
+    public lazy var passportMRZ : String = { return passportDataElements?["5F1F"] ?? "NOT FOUND" }()
     
     // Extract fields from DG11 if present
     public lazy var names : [String] = {
@@ -54,28 +53,28 @@ public class NFCPassportModel {
         return fullName
     }()
     
-    public public(set) lazy var placeOfBirth : String? = {
+    public lazy var placeOfBirth : String? = {
         guard let dg11 = dataGroupsRead[.DG11] as? DataGroup11,
               let placeOfBirth = dg11.placeOfBirth else { return nil }
         return placeOfBirth
     }()
     
     /// residence address
-    public public(set) lazy var residenceAddress : String? = {
+    public lazy var residenceAddress : String? = {
         guard let dg11 = dataGroupsRead[.DG11] as? DataGroup11,
               let address = dg11.address else { return nil }
         return address
     }()
     
     /// phone number
-    public public(set) lazy var phoneNumber : String? = {
+    public lazy var phoneNumber : String? = {
         guard let dg11 = dataGroupsRead[.DG11] as? DataGroup11,
               let telephone = dg11.telephone else { return nil }
         return telephone
     }()
     
     /// personal number
-    public public(set) lazy var personalNumber : String? = {
+    public lazy var personalNumber : String? = {
         if let dg11 = dataGroupsRead[.DG11] as? DataGroup11,
            let personalNumber = dg11.personalNumber { return personalNumber }
         
@@ -83,49 +82,49 @@ public class NFCPassportModel {
     }()
     
     /// face image info
-    public public(set) lazy var faceImageInfo : FaceImageInfo? = {
+    public lazy var faceImageInfo : FaceImageInfo? = {
         guard let dg2 = dataGroupsRead[.DG2] as? DataGroup2 else { return nil }
         
         return FaceImageInfo.from(dg2: dg2)
     }()
 
-    public public(set) lazy var documentSigningCertificate : X509Wrapper? = {
+    public lazy var documentSigningCertificate : X509Wrapper? = {
         return certificateSigningGroups[.documentSigningCertificate]
     }()
 
-    public public(set) lazy var countrySigningCertificate : X509Wrapper? = {
+    public lazy var countrySigningCertificate : X509Wrapper? = {
         return certificateSigningGroups[.issuerSigningCertificate]
     }()
     
     // Extract data from COM
-    public public(set) lazy var LDSVersion : String = {
+    public lazy var LDSVersion : String = {
         guard let com = dataGroupsRead[.COM] as? COM else { return "Unknown" }
         return com.version
     }()
     
     
-    public public(set) lazy var dataGroupsPresent : [String] = {
+    public lazy var dataGroupsPresent : [String] = {
         guard let com = dataGroupsRead[.COM] as? COM else { return [] }
         return com.dataGroupsPresent
     }()
     
     // Parsed datagroup hashes
-    public public(set) var dataGroupsAvailable = [DataGroupId]()
-    public public(set) var dataGroupsRead : [DataGroupId:DataGroup] = [:]
-    public public(set) var dataGroupHashes = [DataGroupId: DataGroupHash]()
+    public var dataGroupsAvailable = [DataGroupId]()
+    public var dataGroupsRead : [DataGroupId:DataGroup] = [:]
+    public var dataGroupHashes = [DataGroupId: DataGroupHash]()
 
     public internal(set) var cardAccess : CardAccess?
     public internal(set) var BACStatus : PassportAuthenticationStatus = .notDone
     public internal(set) var PACEStatus : PassportAuthenticationStatus = .notDone
     public internal(set) var chipAuthenticationStatus : PassportAuthenticationStatus = .notDone
 
-    public public(set) var passportCorrectlySigned : Bool = false
-    public public(set) var documentSigningCertificateVerified : Bool = false
-    public public(set) var passportDataNotTampered : Bool = false
-    public public(set) var activeAuthenticationPassed : Bool = false
-    public public(set) var activeAuthenticationChallenge : [UInt8] = []
-    public public(set) var activeAuthenticationSignature : [UInt8] = []
-    public public(set) var verificationErrors : [Error] = []
+    public var passportCorrectlySigned : Bool = false
+    public var documentSigningCertificateVerified : Bool = false
+    public var passportDataNotTampered : Bool = false
+    public var activeAuthenticationPassed : Bool = false
+    public var activeAuthenticationChallenge : [UInt8] = []
+    public var activeAuthenticationSignature : [UInt8] = []
+    public var verificationErrors : [Error] = []
 
     public var isPACESupported : Bool {
         get {
@@ -301,10 +300,6 @@ public class NFCPassportModel {
     public func verifyActiveAuthentication( challenge: [UInt8], signature: [UInt8] ) {
         self.activeAuthenticationChallenge = challenge
         self.activeAuthenticationSignature = signature
-        
-        
-        
-        
 
         // Get AA Public key
         self.activeAuthenticationPassed = false
@@ -312,8 +307,6 @@ public class NFCPassportModel {
         if let rsaKey = dg15.rsaPublicKey {
             do {
                 var decryptedSig = try OpenSSLUtils.decryptRSASignature(signature: Data(signature), pubKey: rsaKey)
-                
-                print("decryptedSig: \(Data(decryptedSig).base64EncodedString())")
                 
                 // Decrypted signature compromises of header (6A), Message, Digest hash, Trailer
                 // Trailer can be 1 byte (BC - SHA-1 hash) or 2 bytes (xxCC) - where xx identifies the hash algorithm used
