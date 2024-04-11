@@ -48,7 +48,7 @@ func getImage() -> UIImage? {
     }
 #endif
 
-    required init( _ data : [UInt8] ) throws {
+    public required init( _ data : [UInt8] ) throws {
         try super.init(data)
     }
 

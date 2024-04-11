@@ -29,7 +29,7 @@ public class DataGroup1 : DataGroup {
         try super.init(data)
     }
     
-    override func parse(_ data: [UInt8]) throws {
+    public override func parse(_ data: [UInt8]) throws {
         let tag = try getNextTag()
         try verifyTag(tag, equals: 0x5F1F)
         let body = try getNextValue()

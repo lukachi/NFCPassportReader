@@ -14,11 +14,11 @@ import Foundation
 @available(iOS 13, macOS 10.15, *)
 public class DataGroup14 : DataGroup {
     public var asn1 : ASN1Item!
-    public public(set) var securityInfos : [SecurityInfo] = [SecurityInfo]()
+    public var securityInfos : [SecurityInfo] = [SecurityInfo]()
 
     public override var datagroupType: DataGroupId { .DG14 }
     
-    required init( _ data : [UInt8] ) throws {
+    public required init( _ data : [UInt8] ) throws {
         try super.init(data)
     }
     
