@@ -5,9 +5,8 @@
 //  Created by Andy Qua on 29/10/2019.
 //
 
-
-import Foundation
 import OSLog
+import Foundation
 
 #if os(iOS)
 import UIKit
@@ -363,17 +362,18 @@ public class NFCPassportModel {
                 
             }
         } else if let ecdsaPublicKey = dg15.ecdsaPublicKey {
+            Logger.nfcReader.info("Got ECDSA Public Key")
+            
             var digestType = ""
             if let dg14 = dataGroupsRead[.DG14] as? DataGroup14,
                let aa = dg14.securityInfos.compactMap({ $0 as? ActiveAuthenticationInfo }).first {
                 digestType = aa.getSignatureAlgorithmOIDString() ?? ""
             }
             
-            if OpenSSLUtils.verifyECDSASignature( publicKey:ecdsaPublicKey, signature: signature, data: challenge, digestType: digestType ) {
+            Logger.nfcReader.info("digestType: \(digestType)")
+            
+            if OpenSSLUtils.verifyECDSASignature(publicKey: ecdsaPublicKey, signature: signature, data: challenge, digestType: digestType) {
                 self.activeAuthenticationPassed = true
-                
-            } else {
-                
             }
         }
     }

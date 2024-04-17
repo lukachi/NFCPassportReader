@@ -7,7 +7,6 @@
 //
 
 import Foundation
-import OSLog
 
 public enum SecureMessagingSupportedAlgorithms {
     case DES

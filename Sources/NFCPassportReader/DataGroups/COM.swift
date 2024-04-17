@@ -5,13 +5,12 @@
 //
 
 import Foundation
-import OSLog
 
 @available(iOS 13, macOS 10.15, *)
 public class COM : DataGroup {
-    public public(set) var version : String = "Unknown"
-    public public(set) var unicodeVersion : String = "Unknown"
-    public public(set) var dataGroupsPresent : [String] = []
+    public var version : String = "Unknown"
+    public var unicodeVersion : String = "Unknown"
+    public var dataGroupsPresent : [String] = []
 
     public override var datagroupType: DataGroupId { .COM }
 

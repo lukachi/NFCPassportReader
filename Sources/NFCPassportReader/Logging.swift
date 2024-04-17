@@ -6,4 +6,8 @@
 //  Copyright © 2019 Andy Qua. All rights reserved.
 //
 
+import OSLog
 
+extension Logger {
+    static let nfcReader = Logger(subsystem: "nfcPassportLib", category: "nfcReader")
+}

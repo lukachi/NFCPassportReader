@@ -5,8 +5,8 @@
 //  Created by Andy Qua on 29/10/2019.
 //
 
-import Foundation
 import OSLog
+import Foundation
 import OpenSSL
 import CryptoTokenKit
 
@@ -496,6 +496,8 @@ public class OpenSSLUtils {
         
         var nRes = EVP_DigestVerifyInit(ctx, &pkey_ctx, md, nil, pubKey)
         if ( nRes != 1 ) {
+            Logger.nfcReader.info("Error in EVP_DigestVerifyInit")
+            
             return false;
         }
         
@@ -511,6 +513,13 @@ public class OpenSSLUtils {
         
         nRes = EVP_DigestVerifyFinal(ctx, fixedSignature, fixedSignature.count);
         if (nRes != 1) {
+            let error_code = ERR_get_error()
+            
+            var buffer = [Int8](repeating: 0, count: 256)
+            ERR_error_string(error_code, &buffer)
+            
+            Logger.nfcReader.info("Error in EVP_DigestVerifyFinal: \(String(cString: buffer))")
+            
             return false;
         }
         

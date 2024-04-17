@@ -7,7 +7,6 @@
 //
 
 import Foundation
-import OSLog
 
 #if !os(macOS)
 import CoreNFC

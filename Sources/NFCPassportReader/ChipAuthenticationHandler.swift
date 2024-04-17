@@ -6,7 +6,6 @@
 //
 
 import Foundation
-import OSLog
 import OpenSSL
 
 #if !os(macOS)

@@ -7,7 +7,6 @@
 //
 
 import Foundation
-import OSLog
 
 #if !os(macOS)
 import UIKit
@@ -355,7 +354,7 @@ extension PassportReader {
         var readAttempts = 0
         var nfcPassportReaderError: NFCPassportReaderError
         
-        self.updateReaderSessionMessage( alertMessage: NFCViewDisplayMessage.readingDataGroupProgress(dgId, 0) )
+        self.updateReaderSessionMessage(alertMessage: NFCViewDisplayMessage.readingDataGroupProgress(dgId, 0) )
 
         repeat {
             do {
