@@ -364,7 +364,7 @@ public class NFCPassportModel {
         } else if let ecdsaPublicKey = dg15.ecdsaPublicKey {
             Logger.nfcReader.info("Got ECDSA Public Key")
             
-            var digestType = ""
+            var digestType = "ecdsa sha256"
             if let dg14 = dataGroupsRead[.DG14] as? DataGroup14,
                let aa = dg14.securityInfos.compactMap({ $0 as? ActiveAuthenticationInfo }).first {
                 digestType = aa.getSignatureAlgorithmOIDString() ?? ""
