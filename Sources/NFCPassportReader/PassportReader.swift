@@ -27,6 +27,7 @@ public class PassportReader : NSObject {
     public var skipSecureElements = true
     public var skipCA = false
     public var skipPACE = false
+    private var useExtendedMode = false
 
     public var bacHandler : BACHandler?
     public var caHandler : ChipAuthenticationHandler?
@@ -68,6 +69,7 @@ public class PassportReader : NSObject {
         skipSecureElements: Bool = true,
         skipCA: Bool = false,
         skipPACE: Bool = false,
+        useExtendedMode : Bool = false,
         customDisplayMessage: ((NFCViewDisplayMessage) -> String?)? = nil,
         activeAuthenticationChallenge: [UInt8]? = nil
     ) async throws -> NFCPassportModel {
@@ -75,6 +77,7 @@ public class PassportReader : NSObject {
         self.mrzKey = mrzKey
         self.skipCA = skipCA
         self.skipPACE = skipPACE
+        self.useExtendedMode = useExtendedMode
         
         self.dataGroupsToRead.removeAll()
         self.dataGroupsToRead.append( contentsOf:tags)
@@ -273,7 +276,7 @@ extension PassportReader {
         
         let challenge = self.activeAuthenticationChallenge ?? generateRandomUInt8Array(8)
         
-        let response = try await tagReader.doInternalAuthentication(challenge: challenge)
+        let response = try await tagReader.doInternalAuthentication(challenge: challenge, useExtendedMode: useExtendedMode)
         
         self.passport.verifyActiveAuthentication(challenge: challenge, signature: response.data )
     }

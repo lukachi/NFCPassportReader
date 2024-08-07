@@ -39,7 +39,7 @@ public class SecureMessaging {
     }
 
     /// Protect the apdu following the doc9303 specification
-    func protect(apdu : NFCISO7816APDU ) throws -> NFCISO7816APDU {
+    func protect(apdu : NFCISO7816APDU, useExtendedMode: Bool = false) throws -> NFCISO7816APDU {
     
         
         self.ssc = self.incSSC()
@@ -87,7 +87,7 @@ public class SecureMessaging {
         // otherwise its a single byte of size
         let size = do87.count + do97.count + do8e.count
         var dataSize: [UInt8]
-        if size > 255 {
+        if size > 255 || (useExtendedMode && apdu.expectedResponseLength > 231) {
             dataSize = [0x00] + intToBin(size, pad: 4)
         } else {
             dataSize = intToBin(size)
@@ -97,7 +97,7 @@ public class SecureMessaging {
             
         // If the data is more that 255, specify the we are using extended length (0x00, 0x00)
         // Thanks to @filom for the fix!
-        if size > 255 {
+        if size > 255 || (useExtendedMode && apdu.expectedResponseLength > 231) {
             protectedAPDU += [0x00,0x00]
         } else {
             protectedAPDU += [0x00]
