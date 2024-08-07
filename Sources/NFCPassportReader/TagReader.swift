@@ -48,8 +48,7 @@ public class TagReader {
         return try await send( cmd: cmd )
     }
     
-    func doInternalAuthentication( challenge: [UInt8], useExtendedMode: Bool) async throws -> ResponseAPDU {
-        > ResponseAPDU {
+    func doInternalAuthentication( challenge: [UInt8], useExtendedMode: Bool ) async throws -> ResponseAPDU {
         let randNonce = Data(challenge)
 
         var responseLength = 256
