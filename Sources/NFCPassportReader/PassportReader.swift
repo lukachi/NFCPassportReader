@@ -252,8 +252,15 @@ extension PassportReader {
             try await doBACAuthentication(tagReader : tagReader)
         }
         
-        // Now to read the datagroups
-        try await readDataGroups(tagReader: tagReader)
+        while true {
+            do {
+                try await readDataGroups(tagReader: tagReader)
+                
+                break
+            } catch {
+                continue
+            }
+        }
 
         try await doActiveAuthenticationIfNeccessary(tagReader : tagReader)
 
