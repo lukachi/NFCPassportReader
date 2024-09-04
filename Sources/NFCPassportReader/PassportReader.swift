@@ -251,16 +251,8 @@ extension PassportReader {
         if passport.PACEStatus != .success {
             try await doBACAuthentication(tagReader : tagReader)
         }
-        
-        while true {
-            do {
-                try await readDataGroups(tagReader: tagReader)
-                
-                break
-            } catch {
-                continue
-            }
-        }
+            
+        try await readDataGroups(tagReader: tagReader)
 
         try await doActiveAuthenticationIfNeccessary(tagReader : tagReader)
 
