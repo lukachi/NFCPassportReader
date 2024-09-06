@@ -260,7 +260,16 @@ public class TagReader {
             toSend = try sm.protect(apdu:cmd, useExtendedMode: useExtendedMode)
         }
         
-        let (data, sw1, sw2) = try await tag.sendCommand(apdu: toSend)
+        var (data, sw1, sw2) = try await tag.sendCommand(apdu: toSend)
+
+        while (sw1 == 0x61) {
+            let getResponseCmd = NFCISO7816APDU(instructionClass: 0x0, instructionCode: 0xC0, p1Parameter: 0x0, p2Parameter: 0x0, data: Data(), expectedResponseLength: Int(sw2))
+            let nextSegment: Data
+            
+            (nextSegment, sw1, sw2) = try await tag.sendCommand(apdu: getResponseCmd)
+            
+            data += nextSegment
+        }
         
         var rep = ResponseAPDU(data: [UInt8](data), sw1: sw1, sw2: sw2)
         
