@@ -9,22 +9,22 @@ import Foundation
 @available(iOS 13, macOS 10.15, *)
 public class DataGroup11 : DataGroup {
     
-    public public(set) var fullName : String?
-    public public(set) var personalNumber : String?
-    public public(set) var dateOfBirth : String?
-    public public(set) var placeOfBirth : String?
-    public public(set) var address : String?
-    public public(set) var telephone : String?
-    public public(set) var profession : String?
-    public public(set) var title : String?
-    public public(set) var personalSummary : String?
-    public public(set) var proofOfCitizenship : String?
-    public public(set) var tdNumbers : String?
-    public public(set) var custodyInfo : String?
+    public private(set) var fullName : String?
+    public private(set) var personalNumber : String?
+    public private(set) var dateOfBirth : String?
+    public private(set) var placeOfBirth : String?
+    public private(set) var address : String?
+    public private(set) var telephone : String?
+    public private(set) var profession : String?
+    public private(set) var title : String?
+    public private(set) var personalSummary : String?
+    public private(set) var proofOfCitizenship : String?
+    public private(set) var tdNumbers : String?
+    public private(set) var custodyInfo : String?
 
     public override var datagroupType: DataGroupId { .DG11 }
 
-    public required init( _ data : [UInt8] ) throws {
+    required init( _ data : [UInt8] ) throws {
         try super.init(data)
     }
 

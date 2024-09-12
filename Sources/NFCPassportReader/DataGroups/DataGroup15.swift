@@ -9,8 +9,9 @@ import OpenSSL
 
 @available(iOS 13, macOS 10.15, *)
 public class DataGroup15 : DataGroup {
-    public var rsaPublicKey : OpaquePointer?
-    public var ecdsaPublicKey : OpaquePointer?
+    
+    public private(set) var rsaPublicKey : OpaquePointer?
+    public private(set) var ecdsaPublicKey : OpaquePointer?
 
     public override var datagroupType: DataGroupId { .DG15 }
 

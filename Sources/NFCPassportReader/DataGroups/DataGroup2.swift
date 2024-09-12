@@ -12,28 +12,28 @@ import UIKit
 
 @available(iOS 13, macOS 10.15, *)
 public class DataGroup2 : DataGroup {
-    public public(set) var nrImages : Int = 0
-    public public(set) var versionNumber : Int = 0
-    public public(set) var lengthOfRecord : Int = 0
-    public public(set) var numberOfFacialImages : Int = 0
-    public public(set) var facialRecordDataLength : Int = 0
-    public public(set) var nrFeaturePoints : Int = 0
-    public public(set) var gender : Int = 0
-    public public(set) var eyeColor : Int = 0
-    public public(set) var hairColor : Int = 0
-    public public(set) var featureMask : Int = 0
-    public public(set) var expression : Int = 0
-    public public(set) var poseAngle : Int = 0
-    public public(set) var poseAngleUncertainty : Int = 0
-    public public(set) var faceImageType : Int = 0
-    public public(set) var imageDataType : Int = 0
-    public public(set) var imageWidth : Int = 0
-    public public(set) var imageHeight : Int = 0
-    public public(set) var imageColorSpace : Int = 0
-    public public(set) var sourceType : Int = 0
-    public public(set) var deviceType : Int = 0
-    public public(set) var quality : Int = 0
-    public public(set) var imageData : [UInt8] = []
+    public private(set) var nrImages : Int = 0
+    public private(set) var versionNumber : Int = 0
+    public private(set) var lengthOfRecord : Int = 0
+    public private(set) var numberOfFacialImages : Int = 0
+    public private(set) var facialRecordDataLength : Int = 0
+    public private(set) var nrFeaturePoints : Int = 0
+    public private(set) var gender : Int = 0
+    public private(set) var eyeColor : Int = 0
+    public private(set) var hairColor : Int = 0
+    public private(set) var featureMask : Int = 0
+    public private(set) var expression : Int = 0
+    public private(set) var poseAngle : Int = 0
+    public private(set) var poseAngleUncertainty : Int = 0
+    public private(set) var faceImageType : Int = 0
+    public private(set) var imageDataType : Int = 0
+    public private(set) var imageWidth : Int = 0
+    public private(set) var imageHeight : Int = 0
+    public private(set) var imageColorSpace : Int = 0
+    public private(set) var sourceType : Int = 0
+    public private(set) var deviceType : Int = 0
+    public private(set) var quality : Int = 0
+    public private(set) var imageData : [UInt8] = []
 
     public override var datagroupType: DataGroupId { .DG2 }
 
@@ -48,7 +48,7 @@ func getImage() -> UIImage? {
     }
 #endif
 
-    public required init( _ data : [UInt8] ) throws {
+    required init( _ data : [UInt8] ) throws {
         try super.init(data)
     }
 

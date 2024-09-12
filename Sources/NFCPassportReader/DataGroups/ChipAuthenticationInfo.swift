@@ -104,7 +104,7 @@ public class ChipAuthenticationInfo : SecurityInfo {
         throw NFCPassportReaderError.InvalidDataPassed( "Unable to get key length - invalid oid" )
     }
     
-    public static func toProtocolOIDString(oid : String) -> String {
+    private static func toProtocolOIDString(oid : String) -> String {
         if ID_CA_DH_3DES_CBC_CBC_OID == oid {
             return "id-CA-DH-3DES-CBC-CBC"
         }

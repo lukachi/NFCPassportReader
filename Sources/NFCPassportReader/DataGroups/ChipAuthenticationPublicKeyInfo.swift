@@ -39,7 +39,7 @@ public class ChipAuthenticationPublicKeyInfo : SecurityInfo {
     }
     
 
-    public static func toProtocolOIDString(oid : String) -> String {
+    private static func toProtocolOIDString(oid : String) -> String {
         if ID_PK_DH_OID == oid {
             return "id-PK-DH"
         }

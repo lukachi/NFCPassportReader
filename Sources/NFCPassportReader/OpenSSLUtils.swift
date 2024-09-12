@@ -5,14 +5,14 @@
 //  Created by Andy Qua on 29/10/2019.
 //
 
-import OSLog
 import Foundation
+import OSLog
 import OpenSSL
 import CryptoTokenKit
 
 @available(iOS 13, macOS 10.15, *)
 public class OpenSSLUtils {
-    public static var loaded = false
+    private static var loaded = false
     
     /// Returns any OpenSSL Error as a String
     public static func getOpenSSLError() -> String {
@@ -29,7 +29,7 @@ public class OpenSSLUtils {
     /// Extracts the contents of a BIO object and returns it as a String
     /// - Parameter bio: a Pointer to a BIO buffer
     /// - Returns: A string containing the contents of the BIO buffer
-    public static func bioToString( bio : OpaquePointer ) -> String {
+    static func bioToString( bio : OpaquePointer ) -> String {
         
         let len = BIO_ctrl(bio, BIO_CTRL_PENDING, 0, nil)
         var buffer = [CChar](repeating: 0, count: len+1)
@@ -41,7 +41,7 @@ public class OpenSSLUtils {
         return ret
     }
     
-    public static func X509ToPEM( x509: OpaquePointer ) -> String {
+    static func X509ToPEM( x509: OpaquePointer ) -> String {
         
         let out = BIO_new(BIO_s_mem())!
         defer { BIO_free( out) }
@@ -58,6 +58,17 @@ public class OpenSSLUtils {
         defer { BIO_free( out) }
         
         PEM_write_bio_PUBKEY(out, pubKey);
+        let str = OpenSSLUtils.bioToString( bio:out )
+        
+        return str
+    }
+    
+    public static func privKeyToPEM( privKey: OpaquePointer ) -> String {
+        
+        let out = BIO_new(BIO_s_mem())!
+        defer { BIO_free( out) }
+
+        PEM_write_bio_PrivateKey(out, privKey, nil, nil, 0, nil, nil)
         let str = OpenSSLUtils.bioToString( bio:out )
         
         return str
@@ -147,7 +158,7 @@ public class OpenSSLUtils {
                     return String(cString: ptr)
                 }
                 
-                
+                Logger.openSSL.error("error \(cert_error) at \(X509_STORE_CTX_get_error_depth(ctx)) depth lookup:\(val)" )
             }
             
             return ok;
@@ -227,7 +238,7 @@ public class OpenSSLUtils {
             throw OpenSSLError.VerifyAndReturnSODEncapsulatedData("CMS - Verification of P7 failed - unable to verify signature")
         }
         
-        
+        Logger.openSSL.debug("Verification successful\n");
         let len = BIO_ctrl(out, BIO_CTRL_PENDING, 0, nil)
         var buffer = [UInt8](repeating: 0, count: len)
         BIO_read(out, &buffer, Int32(len))
@@ -278,7 +289,7 @@ public class OpenSSLUtils {
             let rc = ASN1_parse_dump(out, ptr.baseAddress?.assumingMemoryBound(to: UInt8.self), data.count, 0, 0)
             if rc == 0 {
                 let str = OpenSSLUtils.getOpenSSLError()
-                
+                Logger.openSSL.debug( "Failed to parse ASN1 Data - \(str)" )
                 throw OpenSSLError.UnableToParseASN1("Failed to parse ASN1 Data - \(str)")
             }
             
@@ -496,8 +507,6 @@ public class OpenSSLUtils {
         
         var nRes = EVP_DigestVerifyInit(ctx, &pkey_ctx, md, nil, pubKey)
         if ( nRes != 1 ) {
-            Logger.nfcReader.info("Error in EVP_DigestVerifyInit")
-            
             return false;
         }
         
@@ -513,13 +522,6 @@ public class OpenSSLUtils {
         
         nRes = EVP_DigestVerifyFinal(ctx, fixedSignature, fixedSignature.count);
         if (nRes != 1) {
-            let error_code = ERR_get_error()
-            
-            var buffer = [Int8](repeating: 0, count: 256)
-            ERR_error_string(error_code, &buffer)
-            
-            Logger.nfcReader.info("Error in EVP_DigestVerifyFinal: \(String(cString: buffer))")
-            
             return false;
         }
         
@@ -527,7 +529,7 @@ public class OpenSSLUtils {
     }
 
     @available(iOS 13, macOS 10.15, *)
-    static func generateAESCMAC( key: [UInt8], message : [UInt8] ) -> [UInt8] {
+    public static func generateAESCMAC( key: [UInt8], message : [UInt8] ) -> [UInt8] {
         let ctx = CMAC_CTX_new();
         defer { CMAC_CTX_free(ctx) }
         var key = key
@@ -545,7 +547,7 @@ public class OpenSSLUtils {
         CMAC_Update(ctx, message, message.count);
         CMAC_Final(ctx, &mac, &maclen);
         
-        
+        Logger.openSSL.debug( "aesMac - mac - \(binToHexRep(mac))" )
         
         return [UInt8](mac[0..<maclen])
     }
@@ -649,16 +651,16 @@ public class OpenSSLUtils {
     }
     
 
-    public static func computeSharedSecret( publicKeyPair: OpaquePointer, publicKey: OpaquePointer ) -> [UInt8] {
+    public static func computeSharedSecret( privateKeyPair: OpaquePointer, publicKey: OpaquePointer ) -> [UInt8] {
         
         // Oddly it seems that we cant use EVP_PKEY stuff for DH as it uses DTX keys which OpenSSL doesn't quite handle right
         // OR I'm misunderstanding something (which is more possible)
         // Works fine though for ECDH keys
         var secret : [UInt8]
-        let keyType = EVP_PKEY_base_id( publicKeyPair )
+        let keyType = EVP_PKEY_base_id( privateKeyPair )
         if keyType == EVP_PKEY_DH || keyType == EVP_PKEY_DHX {
             // Get bn for public key
-            let dh = EVP_PKEY_get1_DH(publicKeyPair);
+            let dh = EVP_PKEY_get1_DH(privateKeyPair);
             
             let dh_pub = EVP_PKEY_get1_DH(publicKey)
             var bn = BN_new()
@@ -667,34 +669,34 @@ public class OpenSSLUtils {
             secret = [UInt8](repeating: 0, count: Int(DH_size(dh)))
             let len = DH_compute_key(&secret, bn, dh);
             
-            
+            Logger.openSSL.debug( "OpenSSLUtils.computeSharedSecret - DH secret len - \(len)" )
         } else {
-            let ctx = EVP_PKEY_CTX_new(publicKeyPair, nil)
+            let ctx = EVP_PKEY_CTX_new(privateKeyPair, nil)
             defer{ EVP_PKEY_CTX_free(ctx) }
             
             if EVP_PKEY_derive_init(ctx) != 1 {
                 // error
-                
+                Logger.openSSL.error( "ERROR - \(OpenSSLUtils.getOpenSSLError())" )
             }
             
             // Set the public key
             if EVP_PKEY_derive_set_peer( ctx, publicKey ) != 1 {
                 // error
-                
+                Logger.openSSL.error( "ERROR - \(OpenSSLUtils.getOpenSSLError())" )
             }
             
             // get buffer length needed for shared secret
             var keyLen = 0
             if EVP_PKEY_derive(ctx, nil, &keyLen) != 1 {
                 // Error
-                
+                Logger.openSSL.error( "ERROR - \(OpenSSLUtils.getOpenSSLError())" )
             }
             
             // Derive the shared secret
             secret = [UInt8](repeating: 0, count: keyLen)
             if EVP_PKEY_derive(ctx, &secret, &keyLen) != 1 {
                 // Error
-                
+                Logger.openSSL.error( "ERROR - \(OpenSSLUtils.getOpenSSLError())" )
             }
         }
         return secret

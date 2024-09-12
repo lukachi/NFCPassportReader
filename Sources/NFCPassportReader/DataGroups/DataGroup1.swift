@@ -21,7 +21,7 @@ public enum DocTypeEnum: String {
 
 @available(iOS 13, macOS 10.15, *)
 public class DataGroup1 : DataGroup {
-    public var elements : [String:String] = [:]
+    public private(set) var elements : [String:String] = [:]
 
     public override var datagroupType: DataGroupId { .DG1 }
     
@@ -29,7 +29,7 @@ public class DataGroup1 : DataGroup {
         try super.init(data)
     }
     
-    public override func parse(_ data: [UInt8]) throws {
+    override func parse(_ data: [UInt8]) throws {
         let tag = try getNextTag()
         try verifyTag(tag, equals: 0x5F1F)
         let body = try getNextValue()
@@ -98,7 +98,7 @@ public class DataGroup1 : DataGroup {
         elements["5F07"] = String( bytes:[data[87]], encoding:.utf8)
     }
     
-    public func getMRZType(length: Int) -> DocTypeEnum {
+    private func getMRZType(length: Int) -> DocTypeEnum {
         if length == 0x5A {
             return .TD1
         }

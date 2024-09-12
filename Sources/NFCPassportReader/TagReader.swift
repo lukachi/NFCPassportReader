@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import OSLog
 
 #if !os(macOS)
 import CoreNFC
@@ -50,12 +51,12 @@ public class TagReader {
     
     func doInternalAuthentication( challenge: [UInt8], useExtendedMode: Bool ) async throws -> ResponseAPDU {
         let randNonce = Data(challenge)
-
+        
         var responseLength = 256
         if useExtendedMode {
             responseLength = 65535
         }
-
+        
         let cmd = NFCISO7816APDU(instructionClass: 00, instructionCode: 0x88, p1Parameter: 0, p2Parameter: 0, data: randNonce, expectedResponseLength: responseLength)
 
         return try await send( cmd: cmd, useExtendedMode: useExtendedMode )
@@ -182,7 +183,7 @@ public class TagReader {
         
         var data = [UInt8](resp.data[..<amountRead])
         
-        
+        Logger.tagReader.debug( "TagReader - Number of data bytes to read - \(remaining)" )
         
         var readAmount : Int = maxDataLengthToRead
         while remaining > 0 {
@@ -193,7 +194,7 @@ public class TagReader {
             self.progress?( Int(Float(amountRead) / Float(remaining+amountRead ) * 100))
             let offset = intToBin(amountRead, pad:4)
 
-            
+            Logger.tagReader.debug( "TagReader - data bytes remaining: \(remaining), will read : \(readAmount)" )
             let cmd = NFCISO7816APDU(
                 instructionClass: 00,
                 instructionCode: 0xB0,
@@ -204,12 +205,12 @@ public class TagReader {
             )
             resp = try await self.send( cmd: cmd )
 
-            
+            Logger.tagReader.debug( "TagReader - got resp - \(binToHexRep(resp.data, asArray: true)), sw1 : \(resp.sw1), sw2 : \(resp.sw2)" )
             data += resp.data
             
             remaining -= resp.data.count
             amountRead += resp.data.count
-            
+            Logger.tagReader.debug( "TagReader - Amount of data left to read - \(remaining)" )
         }
         
         return data
@@ -238,7 +239,7 @@ public class TagReader {
     
     func selectPassportApplication() async throws -> ResponseAPDU {
         // Finally reselect the eMRTD application so the rest of the reading works as normal
-        
+        Logger.tagReader.debug( "Re-selecting eMRTD Application" )
         let cmd : NFCISO7816APDU = NFCISO7816APDU(instructionClass: 0x00, instructionCode: 0xA4, p1Parameter: 0x04, p2Parameter: 0x0C, data: Data([0xA0, 0x00, 0x00, 0x02, 0x47, 0x10, 0x01]), expectedResponseLength: -1)
         
         let response = try await self.send( cmd: cmd)
@@ -253,42 +254,45 @@ public class TagReader {
         return try await send( cmd: cmd )
     }
 
-    func send( cmd: NFCISO7816APDU, useExtendedMode : Bool = false) async throws -> ResponseAPDU {
-        
+    func send( cmd: NFCISO7816APDU, useExtendedMode : Bool = false ) async throws -> ResponseAPDU {
+        Logger.tagReader.debug( "TagReader - sending \(cmd)" )
         var toSend = cmd
         if let sm = secureMessaging {
             toSend = try sm.protect(apdu:cmd, useExtendedMode: useExtendedMode)
+            Logger.tagReader.debug("TagReader - [SM] \(toSend)" )
         }
         
         var (data, sw1, sw2) = try await tag.sendCommand(apdu: toSend)
+        Logger.tagReader.debug( "TagReader - Received response, size \(data.count)b" )
 
+        // Some commands may have bigger response than expected. Read the whole response using INS 0xC0 (GET RESPONSE).
         while (sw1 == 0x61) {
             let getResponseCmd = NFCISO7816APDU(instructionClass: 0x0, instructionCode: 0xC0, p1Parameter: 0x0, p2Parameter: 0x0, data: Data(), expectedResponseLength: Int(sw2))
             let nextSegment: Data
-            
+            // Overwrite sw1 and sw2.
             (nextSegment, sw1, sw2) = try await tag.sendCommand(apdu: getResponseCmd)
-            
+            Logger.tagReader.debug("Read remaining data. Accumulated: \(data.count + nextSegment.count)b. Last batch \(nextSegment.count)b. Still remaining: \(sw2)b")
             data += nextSegment
         }
-        
+
         var rep = ResponseAPDU(data: [UInt8](data), sw1: sw1, sw2: sw2)
         
         if let sm = self.secureMessaging {
             rep = try sm.unprotect(rapdu:rep)
-            
+            Logger.tagReader.debug("\(String(format:"TagReader [SM - unprotected] \(binToHexRep(rep.data, asArray:true)), sw1:0x%02x sw2:0x%02x", rep.sw1, rep.sw2))" )
         } else {
-            
+            Logger.tagReader.debug("\(String(format:"TagReader [unprotected] \(binToHexRep(rep.data, asArray:true)), sw1:0x%02x sw2:0x%02x", rep.sw1, rep.sw2))" )
             
         }
         
         if rep.sw1 != 0x90 && rep.sw2 != 0x00 {
-            
+            Logger.tagReader.error( "Error reading tag: sw1 - 0x\(binToHexRep(sw1)), sw2 - 0x\(binToHexRep(sw2))" )
             let tagError: NFCPassportReaderError
             if (rep.sw1 == 0x63 && rep.sw2 == 0x00) {
                 tagError = NFCPassportReaderError.InvalidMRZKey
             } else {
                 let errorMsg = self.decodeError(sw1: rep.sw1, sw2: rep.sw2)
-                
+                Logger.tagReader.error( "reason: \(errorMsg)" )
                 tagError = NFCPassportReaderError.ResponseError( errorMsg, sw1, sw2 )
             }
             throw tagError
@@ -297,7 +301,7 @@ public class TagReader {
         return rep
     }
 
-    public func decodeError( sw1: UInt8, sw2:UInt8 ) -> String {
+    private func decodeError( sw1: UInt8, sw2:UInt8 ) -> String {
 
         let errors : [UInt8 : [UInt8:String]] = [
             0x62: [0x00:"No information given",

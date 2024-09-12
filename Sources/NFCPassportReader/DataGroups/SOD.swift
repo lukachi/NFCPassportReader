@@ -62,9 +62,9 @@ import OpenSSL
 @available(iOS 13, macOS 10.15, *)
 public class SOD : DataGroup {
     
-    public var pkcs7CertificateData : [UInt8] = []
-    public var asn1 : ASN1Item!
-    public var pubKey : OpaquePointer?
+    public private(set) var pkcs7CertificateData : [UInt8] = []
+    private var asn1 : ASN1Item!
+    private var pubKey : OpaquePointer?
 
     public override var datagroupType: DataGroupId { .SOD }
     

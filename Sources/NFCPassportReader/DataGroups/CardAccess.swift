@@ -14,8 +14,8 @@ import Foundation
 //    optionalData ANY DEFINED BY protocol OPTIONAL
 @available(iOS 13, macOS 10.15, *)
 public class CardAccess {
-    public var asn1 : ASN1Item!
-    public public(set) var securityInfos : [SecurityInfo] = [SecurityInfo]()
+    private var asn1 : ASN1Item!
+    public private(set) var securityInfos : [SecurityInfo] = [SecurityInfo]()
     
     var paceInfo : PACEInfo? {
         get {

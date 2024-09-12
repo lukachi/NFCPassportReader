@@ -125,7 +125,7 @@ public class X509Wrapper {
         return getName(for: X509_get_subject_name(cert))
     }
     
-    public func getName( for name: OpaquePointer? ) -> String? {
+    private func getName( for name: OpaquePointer? ) -> String? {
         guard let name = name else { return nil }
         
         var issuer: String = ""
@@ -147,7 +147,7 @@ public class X509Wrapper {
         return issuer
     }
     
-    public func getAlgorithm( _ algo:  OpaquePointer? ) -> String? {
+    private func getAlgorithm( _ algo:  OpaquePointer? ) -> String? {
         guard let algo = algo else { return nil }
         let len = OBJ_obj2nid(algo)
         var algoString : String? = nil
@@ -157,7 +157,7 @@ public class X509Wrapper {
         return algoString
     }
     
-    public func ASN1TimeToString( _ date: UnsafePointer<ASN1_TIME> ) -> String? {
+    private func ASN1TimeToString( _ date: UnsafePointer<ASN1_TIME> ) -> String? {
         guard let b = BIO_new(BIO_s_mem()) else { return nil }
         defer { BIO_free(b) }
         

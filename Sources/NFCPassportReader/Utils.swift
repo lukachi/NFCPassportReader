@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import OSLog
 
 import CommonCrypto
 import CryptoTokenKit
@@ -15,7 +16,7 @@ import CryptoTokenKit
     import CryptoKit
 #endif
 
-public extension UInt8 {
+private extension UInt8 {
     var hexString: String {
         let string = String(self, radix: 16)
         return (self < 16 ? "0" + string : string)
@@ -185,22 +186,22 @@ public func desMAC(key : [UInt8], msg : [UInt8]) -> [UInt8]{
     let size = msg.count / 8
     var y : [UInt8] = [0,0,0,0,0,0,0,0]
     
-    
+    Logger.passportReader.debug("Calc mac" )
     for i in 0 ..< size {
         let tmp = [UInt8](msg[i*8 ..< i*8+8])
-        
+        Logger.passportReader.debug("x\(i): \(binToHexRep(tmp))" )
         y = DESEncrypt(key: [UInt8](key[0..<8]), message: tmp, iv: y)
-        
+        Logger.passportReader.debug("y\(i): \(binToHexRep(y))" )
     }
     
-    
-    
-    
+    Logger.passportReader.debug("y: \(binToHexRep(y))" )
+    Logger.passportReader.debug("bkey: \(binToHexRep([UInt8](key[8..<16])))" )
+    Logger.passportReader.debug("akey: \(binToHexRep([UInt8](key[0..<8])))" )
     let iv : [UInt8] = [0,0,0,0,0,0,0,0]
     let b = DESDecrypt(key: [UInt8](key[8..<16]), message: y, iv: iv, options:UInt32(kCCOptionECBMode))
-    
+    Logger.passportReader.debug( "b: \(binToHexRep(b))" )
     let a = DESEncrypt(key: [UInt8](key[0..<8]), message: b, iv: iv, options:UInt32(kCCOptionECBMode))
-    
+    Logger.passportReader.debug( "a: \(binToHexRep(a))" )
     
     return a
 }

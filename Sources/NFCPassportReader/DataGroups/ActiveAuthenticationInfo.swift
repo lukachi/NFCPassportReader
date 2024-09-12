@@ -36,7 +36,7 @@ public class ActiveAuthenticationInfo : SecurityInfo {
         return ActiveAuthenticationInfo.toSignatureAlgorithmOIDString(oid: signatureAlgorithmOID)
     }
 
-    public static func toProtocolOIDString(oid : String) -> String {
+    private static func toProtocolOIDString(oid : String) -> String {
         if ID_AA_OID == oid {
             return "id-AA"
         }
@@ -44,7 +44,7 @@ public class ActiveAuthenticationInfo : SecurityInfo {
         return oid
     }
 
-    public static func toSignatureAlgorithmOIDString(oid: String?) -> String? {
+    private static func toSignatureAlgorithmOIDString(oid: String?) -> String? {
         if (ECDSA_PLAIN_SHA1_OID == oid) {
             return "ecdsa-plain-SHA1";
         }

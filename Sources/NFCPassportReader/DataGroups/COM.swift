@@ -5,12 +5,13 @@
 //
 
 import Foundation
+import OSLog
 
 @available(iOS 13, macOS 10.15, *)
 public class COM : DataGroup {
-    public var version : String = "Unknown"
-    public var unicodeVersion : String = "Unknown"
-    public var dataGroupsPresent : [String] = []
+    public private(set) var version : String = "Unknown"
+    public private(set) var unicodeVersion : String = "Unknown"
+    public private(set) var dataGroupsPresent : [String] = []
 
     public override var datagroupType: DataGroupId { .COM }
 
@@ -55,6 +56,6 @@ public class COM : DataGroup {
                 dataGroupsPresent.append( DataGroupParser.dataGroupNames[index] )
             }
         }
-        
+        Logger.passportReader.debug( "DG Found - \(self.dataGroupsPresent)" )
     }
 }

@@ -20,7 +20,7 @@ public class ASN1Item : CustomDebugStringConvertible {
     var line : String = ""
     var parent : ASN1Item? = nil
     
-    public var children = [ASN1Item] ()
+    private var children = [ASN1Item] ()
     
     public init( line : String) {
         self.line = line

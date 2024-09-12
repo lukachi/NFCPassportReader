@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import OSLog
 import OpenSSL
 
 #if !os(macOS)
@@ -13,14 +14,14 @@ import CoreNFC
 import CryptoKit
 
 @available(iOS 15, *)
-public class ChipAuthenticationHandler {
+class ChipAuthenticationHandler {
     
-    public static let NO_PACE_KEY_REFERENCE : UInt8 = 0x00
-    public static let ENC_MODE : UInt8 = 0x1
-    public static let MAC_MODE : UInt8 = 0x2
-    public static let PACE_MODE : UInt8 = 0x3
+    private static let NO_PACE_KEY_REFERENCE : UInt8 = 0x00
+    private static let ENC_MODE : UInt8 = 0x1
+    private static let MAC_MODE : UInt8 = 0x2
+    private static let PACE_MODE : UInt8 = 0x3
 
-    public static let COMMAND_CHAINING_CHUNK_SIZE = 224
+    private static let COMMAND_CHAINING_CHUNK_SIZE = 224
 
     var tagReader : TagReader?
     var gaSegments = [[UInt8]]()
@@ -49,7 +50,7 @@ public class ChipAuthenticationHandler {
 
     public func doChipAuthentication() async throws  {
                 
-        
+        Logger.chipAuth.info( "Performing Chip Authentication - number of public keys found - \(self.chipAuthPublicKeyInfos.count)" )
         guard isChipAuthenticationSupported else {
             throw NFCPassportReaderError.NotYetSupported( "ChipAuthentication not supported" )
         }
@@ -71,7 +72,7 @@ public class ChipAuthenticationHandler {
         }
     }
     
-    public func doChipAuthentication( with chipAuthPublicKeyInfo : ChipAuthenticationPublicKeyInfo ) async throws -> Bool {
+    private func doChipAuthentication( with chipAuthPublicKeyInfo : ChipAuthenticationPublicKeyInfo ) async throws -> Bool {
         
         // So it turns out that some passports don't have ChipAuthInfo items.
         // So if we do have a ChipAuthInfo the we take the keyId (if present) and OID from there,
@@ -94,20 +95,20 @@ public class ChipAuthenticationHandler {
     
     /// Infer OID from public key type - Best guess seems to be to use 3DES_CBC_CBC for both ECDH and DH keys
     /// Apparently works for French passports
-    public func inferOID(fromPublicKeyOID: String ) -> String? {
+    private func inferOID(fromPublicKeyOID: String ) -> String? {
         if fromPublicKeyOID == SecurityInfo.ID_PK_ECDH_OID {
-            
+            Logger.chipAuth.warning("No ChipAuthenticationInfo - guessing its id-CA-ECDH-3DES-CBC-CBC");
             return SecurityInfo.ID_CA_ECDH_3DES_CBC_CBC_OID
         } else if fromPublicKeyOID == SecurityInfo.ID_PK_DH_OID {
-            
+            Logger.chipAuth.warning("No ChipAuthenticationInfo - guessing its id-CA-DH-3DES-CBC-CBC");
             return SecurityInfo.ID_CA_DH_3DES_CBC_CBC_OID
         }
         
-        
+        Logger.chipAuth.warning("No ChipAuthenticationInfo and unsupported ChipAuthenticationPublicKeyInfo public key OID \(fromPublicKeyOID)")
         return nil;
     }
     
-    public func doCA( keyId: Int?, encryptionDetailsOID oid: String, publicKey: OpaquePointer) async throws {
+    private func doCA( keyId: Int?, encryptionDetailsOID oid: String, publicKey: OpaquePointer) async throws {
         
         // Generate Ephemeral Keypair from parameters from DG14 Public key
         // This should work for both EC and DH keys
@@ -120,17 +121,17 @@ public class ChipAuthenticationHandler {
         // Send the public key to the passport
         try await sendPublicKey(oid: oid, keyId: keyId, pcdPublicKey: ephemeralKeyPair!)
             
+        Logger.chipAuth.debug( "Public Key successfully sent to passport!" )
         
-        
-        // Use our ephemeral public key and the passports public key to generate a shared secret
-        // (the passport with do the same thing with their public key and our public key)
-        let sharedSecret = OpenSSLUtils.computeSharedSecret(publicKeyPair:ephemeralKeyPair!, publicKey:publicKey)
+        // Use our ephemeral private key and the passports public key to generate a shared secret
+        // (the passport with do the same thing with their private key and our public key)
+        let sharedSecret = OpenSSLUtils.computeSharedSecret(privateKeyPair:ephemeralKeyPair!, publicKey:publicKey)
         
         // Now try to restart Secure Messaging using the new shared secret and
         try restartSecureMessaging( oid : oid, sharedSecret : sharedSecret, maxTranceiveLength : 1, shouldCheckMAC : true)
     }
     
-    public func sendPublicKey(oid : String, keyId : Int?, pcdPublicKey : OpaquePointer) async throws {
+    private func sendPublicKey(oid : String, keyId : Int?, pcdPublicKey : OpaquePointer) async throws {
         let cipherAlg = try ChipAuthenticationInfo.toCipherAlgorithm(oid: oid)
         guard let keyData = OpenSSLUtils.getPublicKeyData(from: pcdPublicKey) else {
             throw NFCPassportReaderError.InvalidDataPassed("Unable to get public key data from public key" )
@@ -155,7 +156,7 @@ public class ChipAuthenticationHandler {
         }
     }
     
-    public func handleGeneralAuthentication() async throws {
+    private func handleGeneralAuthentication() async throws {
         repeat {
             // Pull next segment from list
             let segment = gaSegments.removeFirst()
@@ -166,7 +167,7 @@ public class ChipAuthenticationHandler {
         } while ( !gaSegments.isEmpty )
     }
         
-    public func restartSecureMessaging( oid : String, sharedSecret : [UInt8], maxTranceiveLength : Int, shouldCheckMAC : Bool) throws  {
+    private func restartSecureMessaging( oid : String, sharedSecret : [UInt8], maxTranceiveLength : Int, shouldCheckMAC : Bool) throws  {
         let cipherAlg = try ChipAuthenticationInfo.toCipherAlgorithm(oid: oid)
         let keyLength = try ChipAuthenticationInfo.toKeyLength(oid: oid)
         
@@ -177,15 +178,15 @@ public class ChipAuthenticationHandler {
         
         let ssc = withUnsafeBytes(of: 0.bigEndian, Array.init)
         if (cipherAlg.hasPrefix("DESede")) {
-            
+            Logger.chipAuth.info( "Restarting secure messaging using DESede encryption")
             let sm = SecureMessaging(encryptionAlgorithm: .DES, ksenc: ksEnc, ksmac: ksMac, ssc: ssc)
             tagReader?.secureMessaging = sm
         } else if (cipherAlg.hasPrefix("AES")) {
-            
+            Logger.chipAuth.info( "Restarting secure messaging using AES encryption")
             let sm = SecureMessaging(encryptionAlgorithm: .AES, ksenc: ksEnc, ksmac: ksMac, ssc: ssc)
             tagReader?.secureMessaging = sm
         } else {
-            
+            Logger.chipAuth.error( "Not restarting secure messaging as unsupported cipher algorithm requested - \(cipherAlg)")
             throw NFCPassportReaderError.InvalidDataPassed("Unsupported cipher algorithm \(cipherAlg)" )
         }
     }

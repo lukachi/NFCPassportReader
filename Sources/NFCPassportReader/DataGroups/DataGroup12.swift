@@ -8,19 +8,19 @@ import Foundation
 
 @available(iOS 13, macOS 10.15, *)
 public class DataGroup12 : DataGroup {
-    public public(set) var issuingAuthority : String?
-    public public(set) var dateOfIssue : String?
-    public public(set) var otherPersonsDetails : String?
-    public public(set) var endorsementsOrObservations : String?
-    public public(set) var taxOrExitRequirements : String?
-    public public(set) var frontImage : [UInt8]?
-    public public(set) var rearImage : [UInt8]?
-    public public(set) var personalizationTime : String?
-    public public(set) var personalizationDeviceSerialNr : String?
+    public private(set) var issuingAuthority : String?
+    public private(set) var dateOfIssue : String?
+    public private(set) var otherPersonsDetails : String?
+    public private(set) var endorsementsOrObservations : String?
+    public private(set) var taxOrExitRequirements : String?
+    public private(set) var frontImage : [UInt8]?
+    public private(set) var rearImage : [UInt8]?
+    public private(set) var personalizationTime : String?
+    public private(set) var personalizationDeviceSerialNr : String?
 
     public override var datagroupType: DataGroupId { .DG12 }
 
-    public required init( _ data : [UInt8] ) throws {
+    required init( _ data : [UInt8] ) throws {
         try super.init(data)
     }
 
@@ -57,7 +57,7 @@ public class DataGroup12 : DataGroup {
         } while pos < data.count
     }
     
-    public func parseDateOfIssue(value: [UInt8]) -> String? {
+    private func parseDateOfIssue(value: [UInt8]) -> String? {
         if value.count == 4 {
             return decodeBCD(value: value)
         } else {
@@ -65,11 +65,11 @@ public class DataGroup12 : DataGroup {
         }
     }
     
-    public func decodeASCII(value: [UInt8]) -> String? {
+    private func decodeASCII(value: [UInt8]) -> String? {
         return String(bytes:value, encoding:.utf8)
     }
     
-    public func decodeBCD(value: [UInt8]) -> String? {
+    private func decodeBCD(value: [UInt8]) -> String? {
         value.map({ String(format: "%02X", $0) }).joined()
     }
 }

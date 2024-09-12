@@ -13,12 +13,12 @@ import Foundation
 //    optionalData ANY DEFINED BY protocol OPTIONAL
 @available(iOS 13, macOS 10.15, *)
 public class DataGroup14 : DataGroup {
-    public var asn1 : ASN1Item!
-    public var securityInfos : [SecurityInfo] = [SecurityInfo]()
+    private var asn1 : ASN1Item!
+    public private(set) var securityInfos : [SecurityInfo] = [SecurityInfo]()
 
     public override var datagroupType: DataGroupId { .DG14 }
     
-    public required init( _ data : [UInt8] ) throws {
+    required init( _ data : [UInt8] ) throws {
         try super.init(data)
     }
     

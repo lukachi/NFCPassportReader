@@ -13,11 +13,11 @@ import UIKit
 @available(iOS 13, macOS 10.15, *)
 public class DataGroup7 : DataGroup {
     
-    public public(set) var imageData : [UInt8] = []
+    public private(set) var imageData : [UInt8] = []
 
     public override var datagroupType: DataGroupId { .DG7 }
 
-    public required init( _ data : [UInt8] ) throws {
+    required init( _ data : [UInt8] ) throws {
         try super.init(data)
     }
     
