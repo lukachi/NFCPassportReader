@@ -9,20 +9,20 @@ import Foundation
 import OpenSSL
 
 @available(iOS 13, macOS 10.15, *)
-public class ASN1Item : CustomDebugStringConvertible {
-    var pos : Int = -1
-    var depth : Int = -1
-    var headerLen : Int = -1
-    var length : Int = -1
-    var itemType : String = "" // Primative or Constructed (prim or cons)
-    var type : String = "" // Actual type of the value ( object, set, etc)
-    var value : String = ""
-    var line : String = ""
-    var parent : ASN1Item? = nil
+public class ASN1Item: CustomDebugStringConvertible {
+    public var pos: Int = -1
+    public var depth: Int = -1
+    public var headerLen: Int = -1
+    public var length: Int = -1
+    public var itemType: String = "" // Primative or Constructed (prim or cons)
+    public var type: String = "" // Actual type of the value ( object, set, etc)
+    public var value: String = ""
+    public var line: String = ""
+    public var parent: ASN1Item? = nil
     
     private var children = [ASN1Item] ()
     
-    public init( line : String) {
+    public init(line: String) {
         self.line = line
         
         let scanner = Scanner(string: line)
@@ -44,24 +44,24 @@ public class ASN1Item : CustomDebugStringConvertible {
         let rest = scanner.scanUpToCharacters(from: end)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         
         if itemType == "cons" {
-            type = rest
+            self.type = rest
 
         } else {
-            let items = rest.components(separatedBy: ":" ).filter{ !$0.isEmpty }
+            let items = rest.components(separatedBy: ":").filter { !$0.isEmpty }
             self.type = items[0].trimmingCharacters(in: .whitespacesAndNewlines)
-            if ( items.count > 1 ) {
+            if items.count > 1 {
                 self.value = items[1].trimmingCharacters(in: .whitespacesAndNewlines)
             }
         }
     }
     
-    func addChild( _ child : ASN1Item ) {
+    func addChild(_ child: ASN1Item) {
         child.parent = self
-        self.children.append( child )
+        children.append(child)
     }
     
-    public func getChild( _ child : Int ) -> ASN1Item? {
-        if ( child < children.count ) {
+    public func getChild(_ child: Int) -> ASN1Item? {
+        if child < children.count {
             return children[child]
         } else {
             return nil
@@ -83,15 +83,12 @@ public class ASN1Item : CustomDebugStringConvertible {
 /// a tree based hieracy of ASN1Item structures - depth based
 @available(iOS 13, macOS 10.15, *)
 public class SimpleASN1DumpParser {
-    public init() {
-        
-    }
+    public init() {}
     
-    public func parse( data: Data ) throws -> ASN1Item {
-        var parsed : String = ""
+    public func parse(data: Data) throws -> ASN1Item {
+        var parsed = ""
         
-
-        let _ = try data.withUnsafeBytes { (ptr) in
+        let _ = try data.withUnsafeBytes { ptr in
             guard let out = BIO_new(BIO_s_mem()) else { throw OpenSSLError.UnableToParseASN1("Unable to allocate output buffer") }
             defer { BIO_free(out) }
         
@@ -104,7 +101,7 @@ public class SimpleASN1DumpParser {
         }
         
         let lines = parsed.components(separatedBy: "\n")
-        let topItem : ASN1Item? = parseLines( lines:lines)
+        let topItem: ASN1Item? = parseLines(lines: lines)
         
         guard let ret = topItem else {
             throw OpenSSLError.UnableToParseASN1("Failed to format ASN1 Data")
@@ -113,10 +110,10 @@ public class SimpleASN1DumpParser {
         return ret
     }
     
-    func parseLines( lines : [String] ) -> ASN1Item? {
-        var topItem : ASN1Item?
+    func parseLines(lines: [String]) -> ASN1Item? {
+        var topItem: ASN1Item?
 
-        var currentParent : ASN1Item?
+        var currentParent: ASN1Item?
         for line in lines {
             if line.trimmingCharacters(in: .whitespacesAndNewlines) == "" {
                 continue
@@ -125,15 +122,15 @@ public class SimpleASN1DumpParser {
             if item.depth == 0 {
                 topItem = item
             } else if item.depth == currentParent!.depth {
-                currentParent!.parent!.addChild( item )
+                currentParent!.parent!.addChild(item)
             } else if item.depth > currentParent!.depth {
-                currentParent!.addChild( item )
+                currentParent!.addChild(item)
             } else {
                 repeat {
                     currentParent = currentParent!.parent
                 } while currentParent!.depth > item.depth-1 && currentParent!.depth != 0
                 if currentParent!.depth == item.depth-1 {
-                    currentParent!.addChild( item )
+                    currentParent!.addChild(item)
                 }
             }
             currentParent = item
@@ -167,7 +164,7 @@ public class SimpleASN1DumpParser {
             ""
         ]
         
-        let topItem = parseLines( lines:lines )
-        print( topItem?.debugDescription ?? "" )
+        let topItem = parseLines(lines: lines)
+        print(topItem?.debugDescription ?? "")
     }
 }
